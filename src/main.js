@@ -59,8 +59,12 @@ async function init() {
 		await fs.remove(tmp_dir, { recursive: true })
 
 		log('Create browser')
-		const browser = await puppeteer.launch({ args: ['--no-sandbox'] }) // to run in GitHub Actions
-		// const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
+		const browser = await puppeteer.launch({
+			executablePath: process.env.CHROME_PATH,
+			// args: ["--no-sandbox", "--disable-setuid-sandbox"],
+			args: ["--no-sandbox"],
+			// headless: false, // to test locally and see what's going on
+		});
 
 
 		log('Login')
@@ -129,7 +133,8 @@ async function roam_export(page, filetype, download_dir) {
 			await page.waitForSelector('.bp3-icon-more')
 
 			log('- (check for "Sync Quick Capture Notes")') // to check for "Sync Quick Capture Notes with Workspace" modal
-			await page.waitForTimeout(1000)
+			// await page.waitForTimeout(1000)
+			await new Promise(r => setTimeout(r, 1000)) // because .waitForSelector doesn't work for some reason
 
 			if (await page.$('.rm-quick-capture-sync-modal')) {
 				log('- Detected "Sync Quick Capture Notes" modal. Closing')
@@ -181,15 +186,18 @@ async function roam_export(page, filetype, download_dir) {
 			}
 
 			log('- Checking for "Export All" button')
-			await page.waitForFunction(() => [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match('Export All')))
+			await page.waitForFunction(() => [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match("Export All|Export")))
 
 			log('- Clicking "Export All" button')
-			await page.evaluate(() => { [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match('Export All')).click() })
+			await page.evaluate(() => { [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match("Export All|Export")).click() })
 
 			log('- Waiting for download to start')
-			await page.waitForSelector('.bp3-spinner')
+			// await page.waitForSelector('.bp3-spinner')
+			// await page.waitForSelector('.bp3-toast-message')
 
-			await page.waitForSelector('.bp3-spinner', { hidden: true })
+			// await page.waitForSelector('.bp3-spinner', { hidden: true })
+			// await page.waitForSelector('.bp3-toast-message', { hidden: true })
+			await new Promise(r => setTimeout(r, 10000)) // Wait for download to complete. Waiting for toast and spinner to disappear is sometimes unreliable, especially for markdown. Using fixed time as a temporary solution
 			log('- Downloading')
 
 			await waitForDownload(download_dir)

@@ -200,7 +200,12 @@ async function init() {
   try {
     await fs.remove(tmp_dir, { recursive: true });
     log("Create browser");
-    const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
+    const browser = await puppeteer.launch({
+      executablePath: process.env.CHROME_PATH,
+      // args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: ["--no-sandbox"]
+      // headless: false, // to test locally and see what's going on
+    });
     log("Login");
     const browserPage = await newPage(browser);
     await roam_login(browserPage, { ROAM_EMAIL, ROAM_PASSWORD });
@@ -239,7 +244,7 @@ async function roam_export(page, filetype, download_dir) {
       await fs.ensureDir(download_dir);
       await page.waitForSelector(".bp3-icon-more");
       log('- (check for "Sync Quick Capture Notes")');
-      await page.waitForTimeout(1e3);
+      await new Promise((r) => setTimeout(r, 1e3));
       if (await page.$(".rm-quick-capture-sync-modal")) {
         log('- Detected "Sync Quick Capture Notes" modal. Closing');
         await page.keyboard.press("Escape");
@@ -280,14 +285,13 @@ async function roam_export(page, filetype, download_dir) {
         log("-", filetype, "already selected");
       }
       log('- Checking for "Export All" button');
-      await page.waitForFunction(() => [...document.querySelectorAll("button.bp3-button.bp3-intent-primary")].find((button) => button.innerText.match("Export All")));
+      await page.waitForFunction(() => [...document.querySelectorAll("button.bp3-button.bp3-intent-primary")].find((button) => button.innerText.match("Export All|Export")));
       log('- Clicking "Export All" button');
       await page.evaluate(() => {
-        [...document.querySelectorAll("button.bp3-button.bp3-intent-primary")].find((button) => button.innerText.match("Export All")).click();
+        [...document.querySelectorAll("button.bp3-button.bp3-intent-primary")].find((button) => button.innerText.match("Export All|Export")).click();
       });
       log("- Waiting for download to start");
-      await page.waitForSelector(".bp3-spinner");
-      await page.waitForSelector(".bp3-spinner", { hidden: true });
+      await new Promise((r) => setTimeout(r, 1e4));
       log("- Downloading");
       await waitForDownload(download_dir);
       resolve();
