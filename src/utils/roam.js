@@ -24,8 +24,12 @@ async function roam_login(browserPage, config) {
 			// log('- (Wait 10 seconds for auto-refresh)')
 			// await page.waitForTimeout(10000) // because Roam auto refreshes the sign-in page, as mentioned here https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895 (and can be seen in non-headless browser)
 
-			await browserPage.waitForSelector('.loading-astrolabe', { timeout: 20000 })
-			await browserPage.waitForSelector('.loading-astrolabe', { hidden: true })
+			try {
+				await browserPage.waitForSelector('.loading-astrolabe', { timeout: 20000 });
+				await browserPage.waitForSelector('.loading-astrolabe', { hidden: true });
+			} catch (err) {
+				log('- no astrolabe spinner, maybe graph is small or already cached?')
+			}
 			// log('- auto-refreshed')
 
 			log('- Filling email field')
@@ -81,11 +85,15 @@ async function roam_open_graph(browserPage, graph_name) {
 			await browserPage.goto(`https://roamresearch.com/#/app/${graph_name}?disablecss=true&disablejs=true`)
 
 			// log('- Checking for astrolabe spinner')
-			await browserPage.waitForSelector('.loading-astrolabe')
-			log('- astrolabe spinning...')
+			try {
+				await browserPage.waitForSelector('.loading-astrolabe')
+				log('- astrolabe spinning...')
 
-			//await page.waitForSelector('.loading-astrolabe', { hidden: true })
-			//log('- astrolabe spinning stopped')
+				// await page.waitForSelector('.loading-astrolabe', { hidden: true })
+				// log('- astrolabe spinning stopped')
+			} catch (err) {
+				log('- no astrolabe spinner, maybe graph is small or already cached?')
+			}
 
 			// try {
 			await browserPage.waitForSelector('.roam-app') // add short timeout here, if fails, don't exit code 1, and instead CHECK if have permission to view graph

@@ -103,8 +103,12 @@ var require_roam = __commonJS({
           log2("- Checking for email field");
           await browserPage.waitForSelector('input[name="email"]');
           log2("- (Wait for auto-refresh)");
-          await browserPage.waitForSelector(".loading-astrolabe", { timeout: 2e4 });
-          await browserPage.waitForSelector(".loading-astrolabe", { hidden: true });
+          try {
+            await browserPage.waitForSelector(".loading-astrolabe", { timeout: 2e4 });
+            await browserPage.waitForSelector(".loading-astrolabe", { hidden: true });
+          } catch (err) {
+            log2("- no astrolabe spinner, maybe graph is small or already cached?");
+          }
           log2("- Filling email field");
           await browserPage.type('input[name="email"]', ROAM_EMAIL2);
           log2("- Filling password field");
@@ -139,8 +143,12 @@ var require_roam = __commonJS({
           browserPage.on("dialog", async (dialog) => await dialog.accept());
           log2("- Navigating to graph");
           await browserPage.goto(`https://roamresearch.com/#/app/${graph_name}?disablecss=true&disablejs=true`);
-          await browserPage.waitForSelector(".loading-astrolabe");
-          log2("- astrolabe spinning...");
+          try {
+            await browserPage.waitForSelector(".loading-astrolabe");
+            log2("- astrolabe spinning...");
+          } catch (err) {
+            log2("- no astrolabe spinner, maybe graph is small or already cached?");
+          }
           await browserPage.waitForSelector(".roam-app");
           log2("Graph loaded!");
           resolve(browserPage);
